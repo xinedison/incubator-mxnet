@@ -110,16 +110,6 @@ We summarize the interface for each class in the following sections.
     NDArray.tostype
 ```
 
-### Array creation
-
-```eval_rst
-.. autosummary::
-    :nosignatures:
-
-    NDArray.zeros_like
-    NDArray.ones_like
-```
-
 ### Array change shape
 
 ```eval_rst
@@ -128,75 +118,7 @@ We summarize the interface for each class in the following sections.
 
     NDArray.T
     NDArray.reshape
-    NDArray.flatten
-    NDArray.expand_dims
-    NDArray.split
-```
-
-### Array expand elements
-
-```eval_rst
-.. autosummary::
-    :nosignatures:
-
     NDArray.broadcast_to
-    NDArray.broadcast_axes
-    NDArray.tile
-    NDArray.pad
-```
-
-### Array rearrange elements
-
-```eval_rst
-.. autosummary::
-    :nosignatures:
-
-    NDArray.transpose
-    NDArray.swapaxes
-    NDArray.flip
-```
-
-### Array reduction
-
-```eval_rst
-.. autosummary::
-    :nosignatures:
-
-    NDArray.sum
-    NDArray.nansum
-    NDArray.prod
-    NDArray.nanprod
-    NDArray.mean
-    NDArray.max
-    NDArray.min
-    NDArray.norm
-```
-
-### Array rounding
-
-```eval_rst
-.. autosummary::
-    :nosignatures:
-
-    NDArray.round
-    NDArray.rint
-    NDArray.fix
-    NDArray.floor
-    NDArray.ceil
-    NDArray.trunc
-```
-
-### Array sorting and searching
-
-```eval_rst
-.. autosummary::
-    :nosignatures:
-
-    NDArray.sort
-    NDArray.argsort
-    NDArray.topk
-    NDArray.argmax
-    NDArray.argmin
 ```
 
 ### Arithmetic operations
@@ -252,11 +174,6 @@ We summarize the interface for each class in the following sections.
 
     NDArray.__getitem__
     NDArray.__setitem__
-    NDArray.slice
-    NDArray.slice_axis
-    NDArray.take
-    NDArray.one_hot
-    NDArray.pick
 ```
 
 ### Lazy evaluation
@@ -266,16 +183,6 @@ We summarize the interface for each class in the following sections.
     :nosignatures:
 
     NDArray.wait_to_read
-```
-
-### Miscellaneous
-
-```eval_rst
-.. autosummary::
-    :nosignatures:
-
-    NDArray.clip
-    NDArray.sign
 ```
 
 ## The `sparse.RowSparseNDArray` Class
@@ -316,9 +223,7 @@ We summarize the interface for each class in the following sections.
     array
     empty
     zeros
-    zeros_like
     ones
-    ones_like
     full
     arange
     load
@@ -385,7 +290,6 @@ We summarize the interface for each class in the following sections.
     batch_take
     one_hot
     pick
-    where
 ```
 
 ## Mathematical functions
@@ -419,7 +323,6 @@ We summarize the interface for each class in the following sections.
     arcsin
     arccos
     arctan
-    broadcast_hypot
     degrees
     radians
 ```
@@ -521,13 +424,6 @@ We summarize the interface for each class in the following sections.
     random_poisson
     random_negative_binomial
     random_generalized_negative_binomial
-    sample_uniform
-    sample_normal
-    sample_gamma
-    sample_exponential
-    sample_poisson
-    sample_negative_binomial
-    sample_generalized_negative_binomial
     mxnet.random.seed
 ```
 
@@ -542,21 +438,6 @@ We summarize the interface for each class in the following sections.
     argsort
     argmax
     argmin
-```
-
-### Linear Algebra
-
-```eval_rst
-.. autosummary::
-    :nosignatures:
-
-    linalg_gemm
-    linalg_gemm2
-    linalg_potrf
-    linalg_potri
-    linalg_trmm
-    linalg_trsm
-    linalg_sumlogdiag
 ```
 
 ### Miscellaneous

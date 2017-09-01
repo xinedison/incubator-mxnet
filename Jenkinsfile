@@ -10,6 +10,8 @@ docker_run = 'tests/ci_build/ci_build.sh'
 max_time = 60
 // assign any caught errors here
 err = null
+// set build status to success by default
+currentBuild.result = "SUCCESS"
 
 // initialize source codes
 def init_git() {
@@ -76,18 +78,11 @@ echo ${libs} | sed -e 's/,/ /g' | xargs md5sum
 }
 
 // Python unittest for CPU
-// Python 2
-def python2_ut(docker_type) {
+def python_ut(docker_type) {
   timeout(time: max_time, unit: 'MINUTES') {
     sh "${docker_run} ${docker_type} find . -name '*.pyc' -type f -delete"
     sh "${docker_run} ${docker_type} PYTHONPATH=./python/ nosetests --with-timer --verbose tests/python/unittest"
     sh "${docker_run} ${docker_type} PYTHONPATH=./python/ nosetests --with-timer --verbose tests/python/train"
-  }
-}
-
-// Python 3
-def python3_ut(docker_type) {
-  timeout(time: max_time, unit: 'MINUTES') {
     sh "${docker_run} ${docker_type} find . -name '*.pyc' -type f -delete"
     sh "${docker_run} ${docker_type} PYTHONPATH=./python/ nosetests-3.4 --with-timer --verbose tests/python/unittest"
   }
@@ -95,17 +90,10 @@ def python3_ut(docker_type) {
 
 // GPU test has two parts. 1) run unittest on GPU, 2) compare the results on
 // both CPU and GPU
-// Python 2
-def python2_gpu_ut(docker_type) {
+def python_gpu_ut(docker_type) {
   timeout(time: max_time, unit: 'MINUTES') {
     sh "${docker_run} ${docker_type} find . -name '*.pyc' -type f -delete"
     sh "${docker_run} ${docker_type} PYTHONPATH=./python/ nosetests --with-timer --verbose tests/python/gpu"
-  }
-}
-
-// Python 3
-def python3_gpu_ut(docker_type) {
-  timeout(time: max_time, unit: 'MINUTES') {
     sh "${docker_run} ${docker_type} find . -name '*.pyc' -type f -delete"
     sh "${docker_run} ${docker_type} PYTHONPATH=./python/ nosetests-3.4 --with-timer --verbose tests/python/gpu"
   }
@@ -159,15 +147,6 @@ try {
             make('gpu', flag)
             pack_lib('gpu')
             stash includes: 'build/cpp-package/example/test_score', name: 'cpp_test_score'
-          }
-        }
-      },
-      'Amalgamation MIN': {
-        node('mxnetlinux') {
-          ws('workspace/amalgamation') {
-            init_git()
-            make('cpu', '-C amalgamation/ clean')
-            make('cpu', '-C amalgamation/ USE_BLAS=openblas MIN=1')
           }
         }
       },
@@ -264,75 +243,31 @@ try {
     }
 
     stage('Unit Test') {
-      parallel 'Python2: CPU': {
+      parallel 'Python2/3: CPU': {
         node('mxnetlinux') {
-          ws('workspace/ut-python2-cpu') {
+          ws('workspace/ut-python-cpu') {
             init_git()
             unpack_lib('cpu')
-            python2_ut('cpu')
+            python_ut('cpu')
           }
         }
       },
-      'Python3: CPU': {
+      'Python2/3: GPU': {
         node('mxnetlinux') {
-          ws('workspace/ut-python3-cpu') {
-            init_git()
-            unpack_lib('cpu')
-            python3_ut('cpu')
-          }
-        }
-      },
-      'Python2: GPU': {
-        node('mxnetlinux') {
-          ws('workspace/ut-python2-gpu') {
+          ws('workspace/ut-python-gpu') {
             init_git()
             unpack_lib('gpu', mx_lib)
-            python2_gpu_ut('gpu')
+            python_gpu_ut('gpu')
           }
         }
       },
-      'Python3: GPU': {
+      'Python2/3: MKLML': {
         node('mxnetlinux') {
-          ws('workspace/ut-python3-gpu') {
-            init_git()
-            unpack_lib('gpu', mx_lib)
-            python3_gpu_ut('gpu')
-          }
-        }
-      },
-      'Python2: MKLML-CPU': {
-        node('mxnetlinux') {
-          ws('workspace/ut-python2-mklml-cpu') {
+          ws('workspace/ut-python-mklml') {
             init_git()
             unpack_lib('mklml')
-            python2_ut('mklml_gpu')
-          }
-        }
-      },
-      'Python2: MKLML-GPU': {
-        node('mxnetlinux') {
-          ws('workspace/ut-python2-mklml-gpu') {
-            init_git()
-            unpack_lib('mklml')
-            python2_gpu_ut('mklml_gpu')
-          }
-        }
-      },
-      'Python3: MKLML-CPU': {
-        node('mxnetlinux') {
-          ws('workspace/ut-python3-mklml-cpu') {
-            init_git()
-            unpack_lib('mklml')
-            python3_ut('mklml_gpu')
-          }
-        }
-      },
-      'Python3: MKLML-GPU': {
-        node('mxnetlinux') {
-          ws('workspace/ut-python3-mklml-gpu') {
-            init_git()
-            unpack_lib('mklml')
-            python3_gpu_ut('mklml_gpu')
+            python_ut('mklml_gpu')
+            python_gpu_ut('mklml_gpu')
           }
         }
       },
@@ -379,7 +314,7 @@ try {
               sh "${docker_run} cpu rm -rf .Renviron"
               sh "${docker_run} cpu mkdir -p /workspace/ut-r-cpu/site-library"
               sh "${docker_run} cpu make rpkg USE_BLAS=openblas R_LIBS=/workspace/ut-r-cpu/site-library"
-              sh "${docker_run} cpu R CMD INSTALL --library=/workspace/ut-r-cpu/site-library R-package"
+              sh "${docker_run} cpu R CMD INSTALL --library=/workspace/ut-r-cpu/site-library mxnet_current_r.tar.gz"
               sh "${docker_run} cpu make rpkgtest R_LIBS=/workspace/ut-r-cpu/site-library"
             }
           }
@@ -394,13 +329,13 @@ try {
               sh "${docker_run} gpu rm -rf .Renviron"
               sh "${docker_run} gpu mkdir -p /workspace/ut-r-gpu/site-library"
               sh "${docker_run} gpu make rpkg USE_BLAS=openblas R_LIBS=/workspace/ut-r-gpu/site-library"
-              sh "${docker_run} gpu R CMD INSTALL --library=/workspace/ut-r-gpu/site-library R-package"
+              sh "${docker_run} gpu R CMD INSTALL --library=/workspace/ut-r-gpu/site-library mxnet_current_r.tar.gz"
               sh "${docker_run} gpu make rpkgtest R_LIBS=/workspace/ut-r-gpu/site-library R_GPU_ENABLE=1"
             }
           }
         }
       },
-      'Python 2: CPU Win':{
+      'Python2/3: CPU Win':{
         node('mxnetwindows') {
           ws('workspace/ut-python-cpu') {
             init_git_win()
@@ -409,46 +344,20 @@ try {
     7z x -y vc14_cpu.7z'''
             bat """xcopy C:\\mxnet\\data data /E /I /Y
     xcopy C:\\mxnet\\model model /E /I /Y
-    call activate py2
-    set PYTHONPATH=${env.WORKSPACE}\\pkg_vc14_cpu\\python
-    del /S /Q ${env.WORKSPACE}\\pkg_vc14_cpu\\python\\*.pyc
-    C:\\mxnet\\test_cpu.bat"""
-          }
-         }
-       },
-       'Python 3: CPU Win': {
-          node('mxnetwindows') {
-          ws('workspace/ut-python-cpu') {
-            init_git_win()
-            unstash 'vc14_cpu'
-            bat '''rmdir /s/q pkg_vc14_cpu
-    7z x -y vc14_cpu.7z'''
-          bat """xcopy C:\\mxnet\\data data /E /I /Y
-    xcopy C:\\mxnet\\model model /E /I /Y
     call activate py3
     set PYTHONPATH=${env.WORKSPACE}\\pkg_vc14_cpu\\python
     del /S /Q ${env.WORKSPACE}\\pkg_vc14_cpu\\python\\*.pyc
     C:\\mxnet\\test_cpu.bat"""
+                            bat """xcopy C:\\mxnet\\data data /E /I /Y
+    xcopy C:\\mxnet\\model model /E /I /Y
+    call activate py2
+    set PYTHONPATH=${env.WORKSPACE}\\pkg_vc14_cpu\\python
+    del /S /Q ${env.WORKSPACE}\\pkg_vc14_cpu\\python\\*.pyc
+    C:\\mxnet\\test_cpu.bat"""
           }
          }
        },
-       'Python 2: GPU Win':{
-         node('mxnetwindows') {
-           ws('workspace/ut-python-gpu') {
-             init_git_win()
-             unstash 'vc14_gpu'
-             bat '''rmdir /s/q pkg_vc14_gpu
-    7z x -y vc14_gpu.7z'''
-             bat """xcopy C:\\mxnet\\data data /E /I /Y
-    xcopy C:\\mxnet\\model model /E /I /Y
-    call activate py2
-    set PYTHONPATH=${env.WORKSPACE}\\pkg_vc14_gpu\\python
-    del /S /Q ${env.WORKSPACE}\\pkg_vc14_gpu\\python\\*.pyc
-    C:\\mxnet\\test_gpu.bat"""
-           }
-         }
-       },
-       'Python 3: GPU Win':{
+       'Python2/3: GPU Win':{
          node('mxnetwindows') {
            ws('workspace/ut-python-gpu') {
              init_git_win()
@@ -461,9 +370,15 @@ try {
     set PYTHONPATH=${env.WORKSPACE}\\pkg_vc14_gpu\\python
     del /S /Q ${env.WORKSPACE}\\pkg_vc14_gpu\\python\\*.pyc
     C:\\mxnet\\test_gpu.bat"""
+             bat """xcopy C:\\mxnet\\data data /E /I /Y
+    xcopy C:\\mxnet\\model model /E /I /Y
+    call activate py2
+    set PYTHONPATH=${env.WORKSPACE}\\pkg_vc14_gpu\\python
+    del /S /Q ${env.WORKSPACE}\\pkg_vc14_gpu\\python\\*.pyc
+    C:\\mxnet\\test_gpu.bat"""
            }
          }
-        }
+       }
     }
 
     stage('Integration Test') {
@@ -514,8 +429,6 @@ try {
         }
       }
     }
-  // set build status to success at the end
-  currentBuild.result = "SUCCESS"
 } catch (caughtError) {
     node("mxnetlinux") {
         sh "echo caught error"

@@ -75,8 +75,7 @@ class BasicOperatorData {
     : opContext_(*opContext) {
       CHECK_EQ(opContext_.run_ctx.stream == nullptr, true)
         << "Invalid runtime context stream state";
-      auto device_id = opContext->run_ctx.get_ctx().dev_id;
-      opContext_.run_ctx.stream = mshadow::NewStream<gpu>(true, true, device_id);
+      opContext_.run_ctx.stream = mshadow::NewStream<gpu>(true, true);
       CHECK_EQ(opContext_.run_ctx.stream != nullptr, true)
         << "Unable to allocate a GPU stream";
     }

@@ -37,7 +37,6 @@
 #include <string>
 #include <utility>
 #include "./operator_common.h"
-#include "./linalg.h"
 
 namespace mxnet {
 namespace op {
@@ -181,9 +180,7 @@ class ConvolutionV1Op : public Operator {
       for (uint32_t gid = 0; gid < param_.num_group; ++gid) {
         mshadow::Tensor<xpu, 2, DType> tmpc = temp_col.Slice(gstride * gid,
                                        gstride * (gid + 1));
-        // Legacy approach shown here for comparison:
-        //   temp_dst[gid] = dot(wmat[gid], tmpc);
-        linalg_gemm(wmat[gid], tmpc, temp_dst[gid], false, false, s);
+        temp_dst[gid] = dot(wmat[gid], tmpc);
       }
       out.Slice(i, i + step) = swapaxis<1, 0>(reshape(temp_dst,
                                               mshadow::Shape4(param_.num_filter,
@@ -270,21 +267,15 @@ class ConvolutionV1Op : public Operator {
         Tensor<xpu, 2, DType> tmpc = temp_col.Slice(gstride * gid, gstride * (gid + 1));
         if (i == 0) {
           Tensor<xpu, 2, DType> tmp_gwmat = gwmat[gid];
-          // Legacy approach shown here for comparison:
-          //   Assign(tmp_gwmat, req[conv_v1::kWeight], dot(temp_dst[gid], tmpc.T()));
-          linalg_gemm(temp_dst[gid], tmpc, tmp_gwmat, false, true, s, req[conv_v1::kWeight]);
+          Assign(tmp_gwmat, req[conv_v1::kWeight], dot(temp_dst[gid], tmpc.T()));
         } else {
-          // Legacy approach shown here for comparison:
-          //   gwmat[gid] += dot(temp_dst[gid], tmpc.T());
-          linalg_gemm(temp_dst[gid], tmpc, gwmat[gid], false, true, s, kAddTo);
+          gwmat[gid] += dot(temp_dst[gid], tmpc.T());
         }
       }
 
       for (uint32_t gid = 0; gid < param_.num_group; ++gid) {
         Tensor<xpu, 2, DType> tmpc = temp_col.Slice(gstride * gid, gstride * (gid + 1));
-        // Legacy approach shown here for comparison:
-        //   tmpc = dot(wmat[gid].T(), temp_dst[gid]);
-        linalg_gemm(wmat[gid], temp_dst[gid], tmpc, true, false, s);
+        tmpc = dot(wmat[gid].T(), temp_dst[gid]);
       }
       if (param_.pad[0] == 0 && param_.pad[1] == 0) {
         Assign(gdata.Slice(i, i + step), req[conv_v1::kData],

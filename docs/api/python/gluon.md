@@ -228,7 +228,6 @@ in Python and then deploy with symbolic graph in C++ and Scala.
     :nosignatures:
 
     MNIST
-    FashionMNIST
     CIFAR10
 ```
 

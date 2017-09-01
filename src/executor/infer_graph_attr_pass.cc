@@ -160,10 +160,7 @@ nnvm::Graph InferAttr(nnvm::Graph &&ret,
           uint32_t eid = idx.entry_id(nid, igrad[i].index);
           if (fis_none(rshape[eid])) {
             rshape[eid] = rshape[idx.entry_id(fnode.inputs[i])];
-          } else if (!fis_none(rshape[idx.entry_id(fnode.inputs[i])])) {
-            // Need to skip empty forward shape, because it may not be
-            // available now and it is possible to infer the forward
-            // shape in one of the next a few passes
+          } else {
             CHECK_EQ(rshape[eid], rshape[idx.entry_id(fnode.inputs[i])])
                 << "Backward shape inconsistent with the forward shape";
           }

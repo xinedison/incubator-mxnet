@@ -54,7 +54,6 @@ struct IFFTParam : public dmlc::Parameter<IFFTParam> {
   }
 };
 
-#if MXNET_USE_CUDA
 template<typename xpu, typename DType>
 class IFFTOp : public Operator {
  public:
@@ -99,6 +98,7 @@ class IFFTOp : public Operator {
                 Shape1(param_.compute_size*dim_*2), s);
     Tensor<xpu, 2, DType> complex_data = Tensor<xpu, 2, DType>(workspace.dptr_,
                                               Shape2(param_.compute_size, dim_*2), s);
+    #if MSHADOW_USE_CUDNN
     // start ifft
     cufftHandle plan;
     cufftPlanMany(&plan, 1, &dim_, nullptr, 0, 0, nullptr, 0, 0, CUFFT_C2C, param_.compute_size);
@@ -131,6 +131,7 @@ class IFFTOp : public Operator {
              req[ifft::kOut], complex_toreal(complex_data));
       cufftDestroy(plan_remain);
     }
+    #endif
     // commenting this out to be consistant with caffe
     // out /= dim_;
   }
@@ -161,6 +162,7 @@ class IFFTOp : public Operator {
                 Shape1(param_.compute_size*dim_*2), s);
     Tensor<xpu, 2, DType> complex_data = Tensor<xpu, 2, DType>(workspace.dptr_,
                                               Shape2(param_.compute_size, dim_*2), s);
+    #if MSHADOW_USE_CUDNN
     // start fft
     cufftHandle plan;
     cufftPlanMany(&plan, 1, &dim_, nullptr, 0, 0, nullptr, 0, 0, CUFFT_C2C, param_.compute_size);
@@ -192,18 +194,16 @@ class IFFTOp : public Operator {
       CHECK_EQ(cufftExecC2C(plan_remain, in_tmp, out_tmp, CUFFT_FORWARD), CUFFT_SUCCESS);
       cufftDestroy(plan_remain);
     }
+    #endif
     // commenting this out to be consistant with caffe
     // gdata /= dim_;
   }
 
  private:
   IFFTParam param_;
-  int dim_, stride_, n_iffts;
-  size_t num_compute;
+  int dim_, stride_, num_compute, n_iffts;
   bool init_cufft_;
 };  // class IFFTOp
-
-#endif  // MXNET_USE_CUDA
 
 // Declare Factory Function, used for dispatch specialization
 template<typename xpu>

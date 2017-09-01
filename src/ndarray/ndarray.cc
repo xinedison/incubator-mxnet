@@ -75,7 +75,8 @@ NDArray NDArray::Reshape(const TShape &shape) const {
     std::vector<NDArray> inputs, outputs;
     inputs.emplace_back(*this);
     outputs.emplace_back(std::move(ret));
-    AutogradRuntime::Get()->RecordOp(std::move(attrs), &inputs, &outputs);
+    AutogradRuntime::Get()->RecordImperativeFCompute(
+      op, attrs, &inputs, &outputs);
     return outputs[0];
   } else {
     CHECK_GE(shape_.Size(), shape.Size())
@@ -90,8 +91,7 @@ NDArray NDArray::Slice(index_t begin, index_t end) const {
   using namespace autograd;
   using namespace mshadow;
   CHECK(!is_none()) << "NDArray is not initialized";
-  CHECK_LE(begin, end)
-      << "Invalid slicing range [" << begin << ", " << end << ")";
+  CHECK_LT(begin, end) << "Invalid slicing range [" << begin << ", " << end << ")";
   CHECK_GE(shape_[0], end) << "Slice end index out of range";
   CHECK_EQ(storage_type(), kDefaultStorage);
   NDArray ret = *this;
@@ -114,7 +114,8 @@ NDArray NDArray::Slice(index_t begin, index_t end) const {
     std::vector<NDArray> inputs, outputs;
     inputs.emplace_back(*this);
     outputs.emplace_back(std::move(ret));
-    AutogradRuntime::Get()->RecordOp(std::move(attrs), &inputs, &outputs);
+    AutogradRuntime::Get()->RecordImperativeFCompute(
+      op, attrs, &inputs, &outputs);
     return outputs[0];
   } else {
     return ret;

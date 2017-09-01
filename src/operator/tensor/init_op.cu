@@ -37,8 +37,7 @@ NNVM_REGISTER_OP(_arange)
 .set_attr<FCompute>("FCompute<gpu>", RangeCompute<gpu>);
 
 NNVM_REGISTER_OP(zeros_like)
-.set_attr<FCompute>("FCompute<gpu>", FillCompute<gpu, 0>)
-.set_attr<FComputeEx>("FComputeEx<gpu>", FillComputeZerosEx<gpu>);
+.set_attr<FCompute>("FCompute<gpu>", FillCompute<gpu, 0>);
 
 NNVM_REGISTER_OP(ones_like)
 .set_attr<FCompute>("FCompute<gpu>", FillCompute<gpu, 1>);

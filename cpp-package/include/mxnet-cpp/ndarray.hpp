@@ -33,7 +33,6 @@
 #include <iterator>
 #include "dmlc/logging.h"
 #include "mxnet-cpp/ndarray.h"
-#include "mxnet-cpp/operator.h"
 
 namespace mxnet {
 namespace cpp {
@@ -360,6 +359,7 @@ inline int NDArray::GetDType() const {
 
 inline const mx_float *NDArray::GetData() const {
   void *ret;
+  CHECK_NE(GetContext().GetDeviceType(), DeviceType::kGPU);
   MXNDArrayGetData(blob_ptr_->handle_, &ret);
   if (GetDType() != 0) {
     return NULL;

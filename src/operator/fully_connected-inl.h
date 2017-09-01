@@ -163,7 +163,7 @@ class FullyConnectedOp : public Operator {
     // gradient of weight
     Tensor<xpu, 2, DType> gwmat = in_grad[fullc::kWeight].get<xpu, 2, DType>(s);
     // Legacy approach shown here for comparison:
-    //   out = Assign(gwmat, req[fullc::kWeight], dot(grad.T(), data));
+    //   Assign(gwmat, req[fullc::kWeight], dot(grad.T(), data));
     linalg_gemm(grad, data, gwmat, true, false, s, req[fullc::kWeight]);
     // gradient of bias
     if (!param_.no_bias) {

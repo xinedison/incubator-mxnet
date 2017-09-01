@@ -57,8 +57,6 @@ parser.add_argument('--batch-norm', action='store_true',
                     help='enable batch normalization or not in vgg. default is false.')
 parser.add_argument('--use-pretrained', action='store_true',
                     help='enable using pretrained model from gluon.')
-parser.add_argument('--kvstore', type=str, default='device',
-                    help='kvstore to use for trainer/module.')
 parser.add_argument('--log-interval', type=int, default=50, help='Number of batches to wait before logging.')
 opt = parser.parse_args()
 
@@ -118,8 +116,7 @@ def train(epochs, ctx):
     if isinstance(ctx, mx.Context):
         ctx = [ctx]
     net.initialize(mx.init.Xavier(magnitude=2.24), ctx=ctx)
-    trainer = gluon.Trainer(net.collect_params(), 'sgd', {'learning_rate': opt.lr, 'wd': opt.wd},
-                            kvstore = opt.kvstore)
+    trainer = gluon.Trainer(net.collect_params(), 'sgd', {'learning_rate': opt.lr, 'wd': opt.wd})
     metric = mx.metric.Accuracy()
     loss = gluon.loss.SoftmaxCrossEntropyLoss()
 
@@ -165,8 +162,7 @@ if __name__ == '__main__':
         out = net(data)
         softmax = mx.sym.SoftmaxOutput(out, name='softmax')
         mod = mx.mod.Module(softmax, context=[mx.gpu(i) for i in range(gpus)] if gpus > 0 else [mx.cpu()])
-        mod.fit(train_data, num_epoch=opt.epochs, kvstore=opt.kvstore,
-                batch_end_callback = mx.callback.Speedometer(batch_size, 1))
+        mod.fit(train_data, num_epoch=opt.epochs, batch_end_callback = mx.callback.Speedometer(batch_size, 1))
     else:
         if opt.mode == 'hybrid':
             net.hybridize()

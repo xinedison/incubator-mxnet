@@ -134,20 +134,12 @@ def print_summary(symbol, shape=None, line_length=120, positions=[.44, .64, .74,
                             pre_filter = pre_filter + int(shape[0])
         cur_param = 0
         if op == 'Convolution':
-            if ("no_bias" in node["attr"]) and (node["attr"]["no_bias"] == 'True'):
-                cur_param = pre_filter * int(node["attr"]["num_filter"])
-                for k in _str2tuple(node["attr"]["kernel"]):
-                    cur_param *= int(k)
-            else:
-                cur_param = pre_filter * int(node["attr"]["num_filter"])
-                for k in _str2tuple(node["attr"]["kernel"]):
-                    cur_param *= int(k)
-                cur_param += int(node["attr"]["num_filter"])
+            cur_param = pre_filter * int(node["attr"]["num_filter"])
+            for k in _str2tuple(node["attr"]["kernel"]):
+                cur_param *= int(k)
+            cur_param += int(node["attr"]["num_filter"])
         elif op == 'FullyConnected':
-            if ("no_bias" in node["attr"]) and (node["attr"]["no_bias"] == 'True'):
-                cur_param = pre_filter * (int(node["attr"]["num_hidden"]))
-            else:
-                cur_param = (pre_filter+1) * (int(node["attr"]["num_hidden"]))
+            cur_param = pre_filter * (int(node["attr"]["num_hidden"]) + 1)
         elif op == 'BatchNorm':
             key = node["name"] + "_output"
             if show_shape:

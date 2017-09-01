@@ -188,8 +188,8 @@ int MXCustomFunctionRecord(int num_inputs, NDArrayHandle *inputs,
   attrs.parsed = params;
   // TODO(piiswrong): remove state by using FComputeEx
   auto state = OpStatePtr::Create<CustomFunctionParam>(params);
-  AutogradRuntime::Get()->RecordOp(
-      std::move(attrs), &ndinputs, &ndoutputs, state);
+  AutogradRuntime::Get()->RecordImperativeOperator(
+      state, attrs.op, attrs, &ndinputs, &ndoutputs);
 
   for (size_t i = 0; i < ndoutputs.size(); ++i) {
     *reinterpret_cast<NDArray*>(outputs[i]) = ndoutputs[i];

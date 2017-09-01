@@ -34,7 +34,6 @@
 #include <string>
 #include <utility>
 #include "./operator_common.h"
-#include "./linalg.h"
 
 
 namespace mxnet {
@@ -144,52 +143,7 @@ struct DeconvolutionParam : public dmlc::Parameter<DeconvolutionParam> {
   index_t DilatedKernelSize(int dim) const {
     return 1 + (kernel[dim] - 1) * dilate[dim];
   }
-
-  bool operator==(const DeconvolutionParam& other) const {
-    return this->kernel == other.kernel &&
-           this->stride == other.stride &&
-           this->dilate == other.dilate &&
-           this->pad == other.pad &&
-           this->adj == other.adj &&
-           this->target_shape == other.target_shape &&
-           this->num_filter == other.num_filter &&
-           this->num_group == other.num_group &&
-           this->workspace == other.workspace &&
-           this->no_bias == other.no_bias &&
-           this->cudnn_tune == other.cudnn_tune &&
-           this->cudnn_off == other.cudnn_off &&
-           this->layout == other.layout;
-  }
 };
-
-}  // namespace op
-}  // namespace mxnet
-
-namespace std {
-template<>
-struct hash<mxnet::op::DeconvolutionParam> {
-  size_t operator()(const mxnet::op::DeconvolutionParam& val) {
-    size_t ret = 0;
-    ret = dmlc::HashCombine(ret, val.kernel);
-    ret = dmlc::HashCombine(ret, val.stride);
-    ret = dmlc::HashCombine(ret, val.dilate);
-    ret = dmlc::HashCombine(ret, val.pad);
-    ret = dmlc::HashCombine(ret, val.adj);
-    ret = dmlc::HashCombine(ret, val.target_shape);
-    ret = dmlc::HashCombine(ret, val.num_filter);
-    ret = dmlc::HashCombine(ret, val.num_group);
-    ret = dmlc::HashCombine(ret, val.workspace);
-    ret = dmlc::HashCombine(ret, val.no_bias);
-    ret = dmlc::HashCombine(ret, val.cudnn_tune);
-    ret = dmlc::HashCombine(ret, val.cudnn_off);
-    ret = dmlc::HashCombine(ret, val.layout);
-    return ret;
-  }
-};
-}  // namespace std
-
-namespace mxnet {
-namespace op {
 
 template<typename xpu, typename DType>
 class DeconvolutionOp : public Operator {
@@ -273,9 +227,7 @@ class DeconvolutionOp : public Operator {
       for (uint32_t gid = 0; gid < param_.num_group; ++gid) {
         mshadow::Tensor<xpu, 2, DType> tmpc = temp_col.Slice(gstride * gid,
                                               gstride * (gid + 1));
-        // Legacy approach shown here for comparison:
-        //   tmpc = dot(wmat[gid].T(), temp_dst[gid]);
-        linalg_gemm(wmat[gid], temp_dst[gid], tmpc, true, false, s);
+        tmpc = dot(wmat[gid].T(), temp_dst[gid]);
       }
       if (o_pad[0] == 0 && o_pad[1] == 0) {
         out.Slice(i, i + step) = pack_col2patch(temp_col,
@@ -383,23 +335,16 @@ class DeconvolutionOp : public Operator {
         Tensor<xpu, 2, DType> tmpc = temp_col.Slice(gstride * gid, gstride * (gid + 1));
         if (i == 0) {
           Tensor<xpu, 2, DType> tmp_gwmat = gwmat[gid];
-          // Legacy approach shown here for comparison:
-          //   Assign(tmp_gwmat, req[deconv::kWeight], dot(temp_dst[gid], tmpc.T()));
-          linalg_gemm(temp_dst[gid], tmpc, tmp_gwmat, false, true, s, req[deconv::kWeight]);
+          Assign(tmp_gwmat, req[deconv::kWeight], dot(temp_dst[gid], tmpc.T()));
         } else {
-          // Legacy approach shown here for comparison:
-          //   gwmat[gid] += dot(temp_dst[gid], tmpc.T());
-          linalg_gemm(temp_dst[gid], tmpc, gwmat[gid], false, true, s, kAddTo);
+          gwmat[gid] += dot(temp_dst[gid], tmpc.T());
         }
       }
-      if (req[deconv::kData] == kWriteTo ||
-          req[deconv::kData] == kWriteInplace ||
-          req[deconv::kData] == kAddTo) {
+      if (req[deconv::kData] == kWriteTo || req[deconv::kData] == kWriteInplace
+                                         || req[deconv::kData] == kAddTo) {
         for (uint32_t gid = 0; gid < param_.num_group; ++gid) {
           Tensor<xpu, 2, DType> tmpc = temp_col.Slice(gstride * gid, gstride * (gid + 1));
-          // Legacy approach shown here for comparison:
-          //   temp_dst[gid] = dot(wmat[gid], tmpc);
-          linalg_gemm(wmat[gid], tmpc, temp_dst[gid], false, false, s);
+          temp_dst[gid] = dot(wmat[gid], tmpc);
         }
         Assign(gdata.Slice(i, i + step),
                req[deconv::kData],

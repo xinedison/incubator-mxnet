@@ -27,8 +27,7 @@ from ctypes import c_int, c_void_p, CFUNCTYPE, POINTER, cast
 from .base import _LIB, check_call, string_types
 from .base import mx_uint, NDArrayHandle, c_array, MXCallbackList, SymbolHandle
 from .ndarray import NDArray
-from .ndarray import _GRAD_REQ_MAP
-from .symbol import Symbol
+from .symbol import _GRAD_REQ_MAP, Symbol
 
 
 def set_recording(is_recording): #pylint: disable=redefined-outer-name
