@@ -102,7 +102,7 @@ def parse_args():
     parser.add_argument('--voc07', dest='use_voc07_metric', type=bool, default=True,
                         help='use PASCAL VOC 07 11-point metric')
     parser.add_argument('--loss_version', dest='loss_version', type=str, default='',
-                        help="loss version , can be '' or 'focal_'")
+                        help="loss version , can be '' or 'focal'")
     args = parser.parse_args()
     return args
 
