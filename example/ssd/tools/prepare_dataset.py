@@ -22,7 +22,7 @@ import subprocess
 curr_path = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(curr_path, '..'))
 from dataset.pascal_voc import PascalVoc
-from dataset.mscoco import Coco
+#from dataset.mscoco import Coco
 from dataset.concat_db import ConcatDB
 
 def load_pascal(image_set, year, devkit_path, shuffle=False):
@@ -64,6 +64,7 @@ def load_pascal(image_set, year, devkit_path, shuffle=False):
     else:
         return imdbs[0]
 
+'''
 def load_coco(image_set, dirname, shuffle=False):
     """
     wrapper function for loading ms coco dataset
@@ -87,6 +88,7 @@ def load_coco(image_set, dirname, shuffle=False):
         return ConcatDB(imdbs, shuffle)
     else:
         return imdbs[0]
+'''
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Prepare lists for dataset')

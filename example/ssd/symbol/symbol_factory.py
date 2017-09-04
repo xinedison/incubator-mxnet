@@ -17,7 +17,23 @@
 
 """Presets for various network configurations"""
 import logging
-import symbol_builder
+
+_symbol_builder = None
+
+def import_module(module_name):
+    """Helper function to import module"""
+    import sys, os
+    import importlib
+    sys.path.append(os.path.dirname(__file__))
+    return importlib.import_module(module_name)
+
+
+def init_loss_version(loss_version=""):
+    global _symbol_builder
+    loss_version = loss_version+'_' if loss_version else ''
+    _symbol_builder = import_module(loss_version+"symbol_builder")
+
+
 
 def get_config(network, data_shape, **kwargs):
     """Configuration factory for various networks
@@ -114,10 +130,10 @@ def get_symbol_train(network, data_shape, **kwargs):
     """
     if network.startswith('legacy'):
         logging.warn('Using legacy model.')
-        return symbol_builder.import_module(network).get_symbol_train(**kwargs)
+        return _symbol_builder.import_module(network).get_symbol_train(**kwargs)
     config = get_config(network, data_shape, **kwargs).copy()
     config.update(kwargs)
-    return symbol_builder.get_symbol_train(**config)
+    return _symbol_builder.get_symbol_train(**config)
 
 def get_symbol(network, data_shape, **kwargs):
     """Wrapper for get symbol for test
@@ -133,7 +149,7 @@ def get_symbol(network, data_shape, **kwargs):
     """
     if network.startswith('legacy'):
         logging.warn('Using legacy model.')
-        return symbol_builder.import_module(network).get_symbol(**kwargs)
+        return _symbol_builder.import_module(network).get_symbol(**kwargs)
     config = get_config(network, data_shape, **kwargs).copy()
     config.update(kwargs)
-    return symbol_builder.get_symbol(**config)
+    return _symbol_builder.get_symbol(**config)

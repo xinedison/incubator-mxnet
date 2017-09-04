@@ -67,6 +67,9 @@ def parse_args():
                         help='use PASCAL VOC 07 metric')
     parser.add_argument('--deploy', dest='deploy_net', help='Load network from model',
                         action='store_true', default=False)
+    parser.add_argument('--loss_version', dest='loss_version', type=str, default='',
+                        help="loss version , can be '' or 'focal_'")
+
     args = parser.parse_args()
     return args
 
@@ -97,10 +100,12 @@ if __name__ == '__main__':
         prefix = args.prefix + args.network
     else:
         prefix = args.prefix
+    print('------in evaluate--------')
     evaluate_net(network, args.rec_path, num_class,
                  (args.mean_r, args.mean_g, args.mean_b), args.data_shape,
                  prefix, args.epoch, ctx, batch_size=args.batch_size,
                  path_imglist=args.list_path, nms_thresh=args.nms_thresh,
                  force_nms=args.force_nms, ovp_thresh=args.overlap_thresh,
                  use_difficult=args.use_difficult, class_names=class_names,
-                 voc07_metric=args.use_voc07_metric)
+                 voc07_metric=args.use_voc07_metric,
+                 loss_version=args.loss_version)

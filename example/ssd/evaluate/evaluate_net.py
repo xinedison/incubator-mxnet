@@ -24,13 +24,13 @@ from dataset.iterator import DetRecordIter
 from config.config import cfg
 from evaluate.eval_metric import MApMetric, VOC07MApMetric
 import logging
-from symbol.symbol_factory import get_symbol
+#from symbol.symbol_factory import get_symbol
 
 def evaluate_net(net, path_imgrec, num_classes, mean_pixels, data_shape,
                  model_prefix, epoch, ctx=mx.cpu(), batch_size=1,
                  path_imglist="", nms_thresh=0.45, force_nms=False,
                  ovp_thresh=0.5, use_difficult=False, class_names=None,
-                 voc07_metric=False):
+                 voc07_metric=False,loss_version=""):
     """
     evalute network given validation record file
 
@@ -74,6 +74,9 @@ def evaluate_net(net, path_imgrec, num_classes, mean_pixels, data_shape,
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
+    import symbol.symbol_factory as sym_factory
+    sym_factory.init_loss_version(loss_version)
+
     # args
     if isinstance(data_shape, int):
         data_shape = (3, data_shape, data_shape)
@@ -89,7 +92,7 @@ def evaluate_net(net, path_imgrec, num_classes, mean_pixels, data_shape,
     if net is None:
         net = load_net
     else:
-        net = get_symbol(net, data_shape[1], num_classes=num_classes,
+        net = sym_factory.get_symbol(net, data_shape[1], num_classes=num_classes,
             nms_thresh=nms_thresh, force_suppress=force_nms)
     if not 'label' in net.list_arguments():
         label = mx.sym.Variable(name='label')

@@ -101,6 +101,8 @@ def parse_args():
                         help='use difficult ground-truths in evaluation')
     parser.add_argument('--voc07', dest='use_voc07_metric', type=bool, default=True,
                         help='use PASCAL VOC 07 11-point metric')
+    parser.add_argument('--loss_version', dest='loss_version', type=str, default='',
+                        help="loss version , can be '' or 'focal_'")
     args = parser.parse_args()
     return args
 
@@ -148,4 +150,5 @@ if __name__ == '__main__':
               force_nms=args.force_nms,
               ovp_thresh=args.overlap_thresh,
               use_difficult=args.use_difficult,
-              voc07_metric=args.use_voc07_metric)
+              voc07_metric=args.use_voc07_metric,
+              loss_version=args.loss_version)

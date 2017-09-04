@@ -16,7 +16,8 @@
 # under the License.
 
 import mxnet as mx
-from common import multi_layer_feature, multibox_layer
+from focal_common import multi_layer_feature, multibox_layer
+from tools.focal_loss_layer import *
 
 
 def import_module(module_name):
@@ -78,7 +79,7 @@ def get_symbol_train(network, num_classes, from_layers, num_filters, strides, pa
     mx.Symbol
 
     """
-    print('----------get train symbol--------------')
+    print('----------- focal get train symbol----------------')
     label = mx.sym.Variable('label')
     body = import_module(network).get_symbol(num_classes, **kwargs)
     layers = multi_layer_feature(body, from_layers, num_filters, strides, pads,
@@ -97,9 +98,13 @@ def get_symbol_train(network, num_classes, from_layers, num_filters, strides, pa
     loc_target_mask = tmp[1]
     cls_target = tmp[2]
 
-    cls_prob = mx.symbol.SoftmaxOutput(data=cls_preds, label=cls_target, \
-        ignore_label=-1, use_ignore=True, grad_scale=1., multi_output=True, \
-        normalization='valid', name="cls_prob")
+    ''' Focal loss related '''
+    cls_prob_ = mx.sym.SoftmaxActivation(cls_preds, mode='channel')
+    cls_prob = mx.sym.Custom(cls_preds, cls_prob_, cls_target, op_type='focal_loss', name='cls_prob',
+            gamma=2.0, alpha=0.25, normalize=True)
+    # cls_prob = mx.symbol.SoftmaxOutput(data=cls_preds, label=cls_target, \
+    #     ignore_label=-1, use_ignore=True, grad_scale=1., multi_output=True, \
+    #     normalization='valid', name="cls_prob")
     loc_loss_ = mx.symbol.smooth_l1(name="loc_loss_", \
         data=loc_target_mask * (loc_preds - loc_target), scalar=1.0)
     loc_loss = mx.symbol.MakeLoss(loc_loss_, grad_scale=1., \
@@ -168,7 +173,7 @@ def get_symbol(network, num_classes, from_layers, num_filters, sizes, ratios,
     mx.Symbol
 
     """
-    print('----------get symbol--------------')
+    print('----------- focal get symbol----------------')
 
     body = import_module(network).get_symbol(num_classes, **kwargs)
     layers = multi_layer_feature(body, from_layers, num_filters, strides, pads,
