@@ -1,6 +1,6 @@
 gpus=4
-train_epochs=1
-prefix='focal_voc_res50'
+train_epochs=240
+prefix='focal_voc_resnet50'
 focal='focal'
 net='resnet50'
 if [ ! -d "./model/${prefix}" ]

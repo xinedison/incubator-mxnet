@@ -18,6 +18,7 @@
 import mxnet as mx
 from focal_common import multi_layer_feature, multibox_layer
 from tools.focal_loss_layer import *
+from tools.debug_util import print_var
 
 
 def import_module(module_name):
@@ -83,20 +84,22 @@ def get_symbol_train(network, num_classes, from_layers, num_filters, strides, pa
     label = mx.sym.Variable('label')
     body = import_module(network).get_symbol(num_classes, **kwargs)
     layers = multi_layer_feature(body, from_layers, num_filters, strides, pads,
-        min_filter=min_filter)
+        min_filter=min_filter) # extract fpn feature
 
     loc_preds, cls_preds, anchor_boxes = multibox_layer(layers, \
         num_classes, sizes=sizes, ratios=ratios, normalization=normalizations, \
-        num_channels=num_filters, clip=False, interm_layer=0, steps=steps)
+        num_channels=num_filters, clip=False, interm_layer=0, steps=steps) # extract detection boxes and label from fpn features
+
 
     tmp = mx.contrib.symbol.MultiBoxTarget(
         *[anchor_boxes, label, cls_preds], overlap_threshold=.5, \
-        ignore_label=-1, negative_mining_ratio=3, minimum_negative_samples=0, \
+        ignore_label=-1, negative_mining_ratio=-1, minimum_negative_samples=0, \
         negative_mining_thresh=.5, variances=(0.1, 0.1, 0.2, 0.2),
         name="multibox_target")
     loc_target = tmp[0]
     loc_target_mask = tmp[1]
     cls_target = tmp[2]
+
 
     ''' Focal loss related '''
     cls_prob_ = mx.sym.SoftmaxActivation(cls_preds, mode='channel')

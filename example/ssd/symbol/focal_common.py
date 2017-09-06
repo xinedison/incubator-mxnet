@@ -32,7 +32,7 @@ class FocalBiasInit(mx.init.Initializer):
     def _init_weight(self, _, arr):
         data = np.full((arr.size,), -np.log((1.0 - self._pi) / self._pi))
         data = np.reshape(data, (-1, self._num_classes))
-        data[:, 0] = 0
+        data[:, 0] = 0 # back ground class probability init to 0
         arr[:] = data.ravel()
 
 
@@ -291,6 +291,7 @@ def multibox_layer(from_layers, num_classes, sizes=[.2, .95],
         # create class prediction layer
         num_cls_pred = num_anchors * num_classes
         ''' Focal loss related '''
+        print('---init focal bias {}_cls_pred_conv_bias here-----'.format(from_name))
         bias = mx.symbol.Variable(name="{}_cls_pred_conv_bias".format(from_name),
             init=FocalBiasInit(num_classes, 0.01), attr={'__lr_mult__': '2.0'})
         # bias = mx.symbol.Variable(name="{}_cls_pred_conv_bias".format(from_name),
