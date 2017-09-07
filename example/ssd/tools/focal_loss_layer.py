@@ -12,7 +12,7 @@ class FocalLoss(mx.operator.CustomOp):
         self.gamma = gamma
         self.normalize = normalize
 
-        self.eps = 1e-14
+        #self.eps = 1e-14
 
     def forward(self, is_train, req, in_data, out_data, aux):
         '''
@@ -29,7 +29,7 @@ class FocalLoss(mx.operator.CustomOp):
 
         n_class = in_data[0].shape[1]
 
-        u = 1 - p - (self.gamma * p * mx.nd.log(mx.nd.maximum(p, self.eps)))
+        u = 1 - p - (self.gamma * p * mx.nd.log(mx.nd.maximum(p, 1e-14)))
         v = 1 - p if self.gamma == 2.0 else mx.nd.power(1 - p, self.gamma - 1.0)
         a = (cls_target > 0) * self.alpha + (cls_target == 0) * (1 - self.alpha)
         gf = v * u * a
