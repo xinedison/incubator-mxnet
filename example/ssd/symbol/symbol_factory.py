@@ -113,7 +113,8 @@ def get_config(network, data_shape, **kwargs):
         steps = []
         return locals()
     elif network == 'mobilenet_v1':
-        from_layers = ['relu4_1_sep', 'relu5_5_sep', '', '', '', '']
+        from_layers = ['relu5_5_sep','relu6_sep','', '', '', '']
+        #from_layers = ['relu4_1_sep', 'relu5_5_sep', '', '', '', '']
         network = 'mobilenet_v1'
         num_filters = [-1, -1, 512, 256, 256, 128]
         strides = [-1, -1, 2, 2, 2, 2]
